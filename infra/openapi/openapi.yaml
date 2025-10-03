@@ -1,0 +1,552 @@
+openapi: 3.1.0
+info:
+  title: CleanOps API
+  version: 0.1.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /auth/login:
+    post:
+      summary: Login with worker credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: JWT tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+  /auth/refresh:
+    post:
+      summary: Exchange refresh token for new tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: JWT tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+  /jobs:
+    get:
+      security:
+        - bearerAuth: []
+      summary: List jobs assigned to the authenticated worker
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job'
+  /jobs/{jobId}:
+    get:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      summary: Retrieve job detail
+      responses:
+        '200':
+          description: Job detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobDetail'
+  /attendance/{jobId}/start-travel:
+    post:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceEvent'
+      responses:
+        '201':
+          description: Travel start recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+  /attendance/{jobId}/arrive:
+    post:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceEvent'
+      responses:
+        '201':
+          description: Arrival recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+  /attendance/{jobId}/clock-in:
+    post:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceEvent'
+      responses:
+        '201':
+          description: Clock in recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+  /attendance/{jobId}/break:
+    post:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceEvent'
+      responses:
+        '201':
+          description: Break recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+  /attendance/{jobId}/clock-out:
+    post:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceEvent'
+      responses:
+        '201':
+          description: Clock out recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+  /jobs/{jobId}/tasks/bulk:
+    post:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskBulk'
+      responses:
+        '200':
+          description: Tasks upserted
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskItem'
+  /photos/signed-upload:
+    post:
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhotoUploadRequest'
+      responses:
+        '200':
+          description: Signed URL issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedUpload'
+  /jobs/{jobId}/photos:
+    post:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhotoCreate'
+      responses:
+        '201':
+          description: Photo metadata stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Photo'
+  /jobs/{jobId}/signoff:
+    post:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Signoff'
+      responses:
+        '200':
+          description: Sign-off stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Signoff'
+  /jobs/{jobId}/incidents:
+    post:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Incident'
+      responses:
+        '201':
+          description: Incident recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incident'
+  /jobs/{jobId}/payroll/draft:
+    post:
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollDraftRequest'
+      responses:
+        '200':
+          description: Payroll draft response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollDraftResponse'
+  /sync/batch:
+    post:
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncBatch'
+      responses:
+        '200':
+          description: Sync events accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inserted:
+                    type: integer
+  /sync/since:
+    get:
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+            format: date-time
+          description: >-
+            Optional ISO-8601 timestamp corresponding to the last received
+            event's createdAt value. Events strictly newer than this value
+            will be returned.
+      responses:
+        '200':
+          description: Sync events since cursor
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SyncEvent'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+      required: [refreshToken]
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        scheduledDate:
+          type: string
+          format: date-time
+    JobDetail:
+      allOf:
+        - $ref: '#/components/schemas/Job'
+        - type: object
+          properties:
+            site:
+              type: object
+              properties:
+                name:
+                  type: string
+                address:
+                  type: string
+            tasks:
+              type: array
+              items:
+                $ref: '#/components/schemas/TaskItem'
+    AttendanceEvent:
+      type: object
+      properties:
+        occurredAt:
+          type: string
+          format: date-time
+        coordinates:
+          type: array
+          items:
+            type: number
+        note:
+          type: string
+      required: [occurredAt]
+    Attendance:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+    TaskBulk:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskItem'
+      required: [tasks]
+    TaskItem:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        notes:
+          type: string
+        completed:
+          type: boolean
+    PhotoUploadRequest:
+      type: object
+      properties:
+        contentType:
+          type: string
+      required: [contentType]
+    SignedUpload:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+        objectKey:
+          type: string
+        publicUrl:
+          type: string
+    PhotoCreate:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [BEFORE, AFTER, INCIDENT, SIGNATURE]
+        objectKey:
+          type: string
+        hash:
+          type: string
+        note:
+          type: string
+      required: [kind, objectKey, hash]
+    Photo:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+        objectKey:
+          type: string
+    Signoff:
+      type: object
+      properties:
+        clientName:
+          type: string
+        clientRole:
+          type: string
+        signedAt:
+          type: string
+          format: date-time
+        signatureKey:
+          type: string
+      required: [clientName, clientRole, signedAt, signatureKey]
+    Incident:
+      type: object
+      properties:
+        occurredAt:
+          type: string
+          format: date-time
+        description:
+          type: string
+        actionTaken:
+          type: string
+      required: [occurredAt, description]
+    PayrollDraftRequest:
+      type: object
+      properties:
+        timezone:
+          type: string
+        days:
+          type: array
+          items:
+            type: object
+            properties:
+              dayType:
+                type: string
+                enum: [weekday, saturday, sunday, publicHoliday]
+              hours:
+                type: number
+              baseRate:
+                type: number
+            required: [dayType, hours, baseRate]
+      required: [timezone, days]
+    PayrollDraftResponse:
+      type: object
+      properties:
+        workerId:
+          type: string
+        jobId:
+          type: string
+        totalHours:
+          type: number
+        totalPay:
+          type: number
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              day:
+                type: string
+              hours:
+                type: number
+              ordinaryHours:
+                type: number
+              overtimeHours:
+                type: number
+              total:
+                type: number
+    SyncBatch:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncEvent'
+      required: [events]
+    SyncEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        type:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        payload:
+          type: string

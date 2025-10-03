@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PhotoKind {
+  BEFORE
+  AFTER
+  INCIDENT
+  SIGNATURE
+}
+
+enum AttendanceType {
+  TRAVEL_START
+  ARRIVE
+  CLOCK_IN
+  BREAK
+  CLOCK_OUT
+}
+
+model Worker {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  role          String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  assignments   JobAssignment[]
+  attendances   Attendance[]
+  tasks         TaskItem[]
+  photos        ProofPhoto[]
+  signoffs      Signoff[]
+  incidents     Incident[]
+  payrollCalcs  PayrollCalc[]
+  syncEvents    SyncEvent[]
+}
+
+model Site {
+  id        String  @id @default(cuid())
+  name      String
+  address   String
+  timezone  String
+  jobs      Job[]
+}
+
+model Job {
+  id            String         @id @default(cuid())
+  siteId        String
+  site          Site           @relation(fields: [siteId], references: [id])
+  title         String
+  description   String?
+  scheduledDate DateTime
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  assignments   JobAssignment[]
+  attendances   Attendance[]
+  tasks         TaskItem[]
+  photos        ProofPhoto[]
+  signoff       Signoff?
+  incidents     Incident[]
+  payrollCalcs  PayrollCalc[]
+}
+
+model JobAssignment {
+  id       String @id @default(cuid())
+  jobId    String
+  workerId String
+  job      Job    @relation(fields: [jobId], references: [id])
+  worker   Worker @relation(fields: [workerId], references: [id])
+}
+
+model Attendance {
+  id         String          @id @default(cuid())
+  jobId      String
+  workerId   String
+  type       AttendanceType
+  occurredAt DateTime
+  coordinates Decimal[]?
+  note       String?
+  job        Job            @relation(fields: [jobId], references: [id])
+  worker     Worker         @relation(fields: [workerId], references: [id])
+}
+
+model TaskItem {
+  id        String   @id @default(cuid())
+  jobId     String
+  workerId  String
+  title     String
+  notes     String?
+  completed Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  job       Job       @relation(fields: [jobId], references: [id])
+  worker    Worker    @relation(fields: [workerId], references: [id])
+}
+
+model ProofPhoto {
+  id        String    @id @default(cuid())
+  jobId     String
+  workerId  String
+  kind      PhotoKind
+  objectKey String
+  hash      String
+  note      String?
+  createdAt DateTime   @default(now())
+  job       Job        @relation(fields: [jobId], references: [id])
+  worker    Worker     @relation(fields: [workerId], references: [id])
+}
+
+model Signoff {
+  id           String   @id @default(cuid())
+  jobId        String   @unique
+  workerId     String
+  clientName   String
+  clientRole   String
+  signedAt     DateTime
+  signatureKey String
+  job          Job      @relation(fields: [jobId], references: [id])
+  worker       Worker   @relation(fields: [workerId], references: [id])
+}
+
+model Incident {
+  id          String   @id @default(cuid())
+  jobId       String
+  workerId    String
+  occurredAt  DateTime
+  description String
+  actionTaken String?
+  job         Job      @relation(fields: [jobId], references: [id])
+  worker      Worker   @relation(fields: [workerId], references: [id])
+}
+
+model PayrollCalc {
+  id         String   @id @default(cuid())
+  jobId      String
+  workerId   String
+  totalHours Float
+  totalPay   Float
+  timezone   String
+  breakdown  Json
+  createdAt  DateTime @default(now())
+  job        Job      @relation(fields: [jobId], references: [id])
+  worker     Worker   @relation(fields: [workerId], references: [id])
+}
+
+model SyncEvent {
+  id         String   @id @default(cuid())
+  workerId   String
+  type       String
+  occurredAt DateTime
+  payload    String
+  createdAt  DateTime @default(now())
+  worker     Worker   @relation(fields: [workerId], references: [id])
+}
