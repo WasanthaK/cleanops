@@ -1,0 +1,30 @@
+openapi: 3.1.0
+info:
+  title: CleanOps API
+  version: 1.0.0
+paths:
+  /sync/events:
+    get:
+      summary: Retrieve sync events
+      parameters:
+        - in: query
+          name: since
+          schema:
+            type: string
+          description: |
+            Cursor representing the last event that the client has processed. The
+            server resolves the cursor to the event's creation timestamp and
+            returns every event created after that timestamp. When multiple events
+            share the same creation time, events with lexicographically greater
+            identifiers are returned to guarantee chronological delivery.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 500
+          description: Maximum number of events to return.
+      responses:
+        '200':
+          description: Successful response containing ordered events.

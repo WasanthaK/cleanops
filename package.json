@@ -1,0 +1,13 @@
+{
+  "name": "cleanops",
+  "version": "1.0.0",
+  "description": "Cleaning Operations Management",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
