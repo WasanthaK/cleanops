@@ -7,6 +7,49 @@
 
 ---
 
+## ⚡ AUTONOMOUS DEVELOPMENT INSTRUCTIONS
+
+**Client is traveling and unavailable for questions. You MUST work autonomously.**
+
+### Decision-Making Authority
+✅ **You have full authority to:**
+- Make all technical implementation decisions
+- Choose libraries, packages, and tools that best fit the requirements
+- Design database schemas and API endpoints
+- Implement error handling and validation strategies
+- Write tests and documentation
+- Refactor code for better quality
+- Fix bugs and issues you discover
+- Create branches and commit code
+
+### Default Assumptions (Use These If Unsure)
+1. **Security:** Always err on the side of more security (encryption, validation, rate limiting)
+2. **Testing:** Write tests for all new features (aim for >80% coverage)
+3. **Error Handling:** Implement comprehensive error handling with user-friendly messages
+4. **Logging:** Add detailed logging for debugging (use Winston or similar)
+5. **Documentation:** Document all new APIs in OpenAPI spec
+6. **Code Style:** Follow existing code patterns in the codebase
+7. **Validation:** Validate all inputs using class-validator decorators
+8. **Performance:** Implement pagination for list endpoints (default 50 items)
+9. **Mobile-First:** Any UI work must be touch-optimized and responsive
+10. **Offline-First:** Workers must be able to function without internet
+
+### When Making Choices
+- **Library Selection:** Choose the most popular, well-maintained option (check npm trends)
+- **API Design:** Follow RESTful conventions already established in the codebase
+- **Database Design:** Follow existing Prisma schema patterns
+- **UI/UX:** Match existing component styles and patterns
+- **Configuration:** Use environment variables for all secrets/settings
+
+### What NOT to Do
+❌ Do not wait for clarification - make informed decisions and document them
+❌ Do not skip tests - write them as you build features
+❌ Do not hardcode values - use configuration
+❌ Do not break existing functionality - run tests before committing
+❌ Do not implement features outside Phase 1-3 priorities
+
+---
+
 ## 🎯 Project Overview
 
 CleanOps is a comprehensive work completion platform for cleaning and field service companies operating in Australia. The system features:
@@ -688,7 +731,181 @@ pnpm test:e2e
 
 ---
 
-## 📚 Documentation Links
+## � Technical Decisions & Defaults
+
+### **API Development Standards**
+```typescript
+// Use these patterns for all new endpoints:
+
+// 1. Controller Pattern (follow existing style)
+@Controller('integrations/xero')
+@UseGuards(JwtAuthGuard)
+export class XeroController {
+  constructor(private readonly xeroService: XeroService) {}
+  
+  @Post('connect')
+  async connect(@Body() dto: ConnectXeroDto) {
+    // Implementation
+  }
+}
+
+// 2. DTO Validation (always use)
+export class ConnectXeroDto {
+  @IsString()
+  @IsNotEmpty()
+  authorizationCode: string;
+  
+  @IsString()
+  @IsOptional()
+  tenantId?: string;
+}
+
+// 3. Error Handling (standardized)
+try {
+  // operation
+} catch (error) {
+  this.logger.error(`Failed to connect Xero: ${error.message}`, error.stack);
+  throw new BadRequestException('Failed to connect to Xero. Please try again.');
+}
+
+// 4. Response Format (consistent)
+return {
+  success: true,
+  data: result,
+  message: 'Xero connected successfully'
+};
+```
+
+### **Environment Variables Template**
+Add these to `.env` file (copy from `.env.example` if exists):
+
+```bash
+# Xero Integration
+XERO_CLIENT_ID=your_client_id_here
+XERO_CLIENT_SECRET=your_client_secret_here
+XERO_REDIRECT_URI=http://localhost:3000/integrations/xero/callback
+XERO_WEBHOOK_KEY=your_webhook_signing_key
+
+# Evia Sign Integration
+EVIA_SIGN_API_KEY=your_api_key_here
+EVIA_SIGN_API_URL=https://api.eviasign.com/v1
+EVIA_SIGN_WEBHOOK_SECRET=your_webhook_secret_here
+
+# Encryption (generate: openssl rand -base64 32)
+ENCRYPTION_KEY=generate_a_secure_32_byte_key_here
+
+# AWS S3 (already configured for MinIO in docker-compose)
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
+AWS_REGION=ap-southeast-2
+AWS_BUCKET=cleanops-prod
+
+# Application
+NODE_ENV=development
+PORT=3000
+JWT_SECRET=your_jwt_secret_here
+```
+
+### **Database Migration Workflow**
+```bash
+# Always follow this workflow for schema changes:
+
+# 1. Update schema.prisma with new models
+# 2. Create migration
+cd infra/prisma
+npx prisma migrate dev --name add_xero_integration
+
+# 3. Generate Prisma Client
+npx prisma generate
+
+# 4. Update seed.ts if needed for demo data
+# 5. Test migration on fresh database
+docker-compose down -v  # Wipe data
+docker-compose up -d
+pnpm prisma:reset  # Runs migrations + seed
+```
+
+### **Testing Standards**
+```typescript
+// Unit Test Example (follow this pattern)
+describe('XeroService', () => {
+  let service: XeroService;
+  let prisma: PrismaService;
+  
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [XeroService, PrismaService],
+    }).compile();
+    
+    service = module.get<XeroService>(XeroService);
+    prisma = module.get<PrismaService>(PrismaService);
+  });
+  
+  describe('connectXero', () => {
+    it('should store encrypted tokens', async () => {
+      // Test implementation
+      expect(result.accessToken).toBeDefined();
+    });
+    
+    it('should handle invalid auth codes', async () => {
+      await expect(
+        service.connectXero('invalid_code')
+      ).rejects.toThrow();
+    });
+  });
+});
+```
+
+### **Logging Standards**
+```typescript
+// Use NestJS Logger in all services
+import { Logger } from '@nestjs/common';
+
+export class XeroService {
+  private readonly logger = new Logger(XeroService.name);
+  
+  async syncPayroll() {
+    this.logger.log('Starting payroll sync to Xero');
+    
+    try {
+      // operation
+      this.logger.log(`Synced ${count} payroll records successfully`);
+    } catch (error) {
+      this.logger.error('Payroll sync failed', error.stack);
+      throw error;
+    }
+  }
+}
+```
+
+### **API Credential Instructions**
+
+#### Xero Setup (Do This First)
+1. Go to https://developer.xero.com/app/manage
+2. Create new app: "CleanOps Integration"
+3. OAuth 2.0 redirect URI: `http://localhost:3000/integrations/xero/callback`
+4. Scopes needed: `accounting.transactions`, `payroll.employees`, `payroll.timesheets`
+5. Copy Client ID and Client Secret to `.env`
+6. Enable webhooks (optional but recommended)
+
+#### Evia Sign Setup
+1. Contact Evia Sign sales team for API access
+2. Request mobile-optimized signing workflow
+3. Get API credentials: API Key and Webhook Secret
+4. Set up webhook URL: `https://yourdomain.com/integrations/evia-sign/webhook/status`
+5. Upload document templates via their dashboard
+6. Copy credentials to `.env`
+
+#### AWS S3 / MinIO Setup
+- Development: Use MinIO (already in docker-compose.yml)
+- Production: Create S3 bucket in `ap-southeast-2` region
+- Enable CORS for web uploads
+- Set lifecycle policy: delete unfinished uploads after 1 day
+- Enable versioning for audit trail
+
+---
+
+## �📚 Documentation Links
 
 - **Features:** See FEATURES.md for complete feature specifications
 - **User Guide:** See USER-GUIDE.md for API examples and workflows
@@ -731,7 +948,166 @@ pnpm test:e2e
 
 ---
 
+## ❓ FAQ for Development Agent
+
+### "Which library should I use for X?"
+**Answer:** Check npm trends for popularity, choose the most maintained option. Examples:
+- Xero: Use official `xero-node` SDK
+- HTTP calls: Use `axios` (already in project)
+- PDF: Use `pdf-lib` 
+- Templating: Use `handlebars`
+- Validation: Use `class-validator` (already in project)
+- Date handling: Use `date-fns` (lightweight) or `dayjs`
+- Encryption: Use Node.js built-in `crypto` module
+
+### "How should I structure the Xero/Evia Sign integration?"
+**Answer:** Follow the existing pattern in packages/api/src/:
+```
+packages/api/src/integrations/
+  xero/
+    xero.controller.ts
+    xero.service.ts
+    xero.module.ts
+    dto/
+      connect-xero.dto.ts
+      sync-payroll.dto.ts
+    interfaces/
+      xero-config.interface.ts
+  evia-sign/
+    evia-sign.controller.ts
+    evia-sign.service.ts
+    evia-sign.module.ts
+    dto/
+    interfaces/
+```
+
+### "Should I create a new branch?"
+**Answer:** Yes, create feature branches:
+- `feature/xero-integration`
+- `feature/evia-sign-integration`
+- `feature/job-templates`
+Merge to `main` after testing.
+
+### "How do I handle secrets/tokens?"
+**Answer:** 
+1. Store in database encrypted using `crypto` module
+2. Never commit secrets to git
+3. Use environment variables for configuration
+4. Create `.env.example` template without real values
+
+### "What if Xero/Evia Sign API documentation is unclear?"
+**Answer:**
+1. Check their official SDK examples first
+2. Look for code samples on GitHub
+3. Implement basic happy path first
+4. Add error handling after basic flow works
+5. Document your assumptions in code comments
+
+### "How do I test integrations without real API access?"
+**Answer:**
+1. Create mock services for development
+2. Use Jest mocks for unit tests
+3. Add integration tests that can be skipped if no credentials
+4. Document test data requirements
+
+```typescript
+// Example mock pattern
+const mockXeroClient = {
+  getEmployees: jest.fn().mockResolvedValue([...]),
+  createPayRun: jest.fn().mockResolvedValue({...}),
+};
+```
+
+### "What mobile browsers must I support?"
+**Answer:** 
+- iOS Safari 14+ (primary - most field workers use iPhones)
+- Chrome Android 90+ (secondary)
+- Samsung Internet (if using Samsung devices)
+Test on real devices, not just browser dev tools.
+
+### "How do I handle offline/online transitions?"
+**Answer:** Follow existing pattern in packages/web/src/sync/:
+1. Queue operations in IndexedDB when offline
+2. Use Background Sync API to retry when online
+3. Show clear UI indicators for sync status
+4. Handle conflicts with "last write wins" + notification
+
+### "What Australian award rules do I need to know?"
+**Answer:** Check existing implementation in packages/api/src/payroll/:
+- Ordinary hours vs overtime rates
+- Weekend loading (Saturday 1.5x, Sunday 2x)
+- Public holiday rates (2.5x)
+- Minimum shift length (3-4 hours depending on award)
+**NOTE:** Exact rules in `award.config.ts` - extend that file.
+
+### "How detailed should my commit messages be?"
+**Answer:** Use conventional commits format:
+```
+feat(xero): implement OAuth connection flow
+fix(evia-sign): handle webhook signature verification
+docs(api): update Xero integration setup guide
+test(payroll): add tests for overtime calculations
+```
+
+### "Should I update the OpenAPI spec?"
+**Answer:** YES! Update `infra/openapi/openapi.yaml` for all new endpoints.
+Use Swagger decorators in NestJS controllers:
+```typescript
+@ApiTags('xero')
+@ApiResponse({ status: 200, description: 'Success' })
+```
+
+### "What if I find bugs in existing code?"
+**Answer:** 
+1. Fix critical bugs immediately (security, data loss)
+2. Document minor bugs in code comments with TODO
+3. Keep a list of technical debt items
+4. Don't get distracted from Phase 1 priorities
+
+### "How do I handle Australian timezones?"
+**Answer:**
+- Store all times in UTC in database
+- Convert to AEST/AEDT for display
+- Use `date-fns-tz` for timezone conversion
+- Remember: Sydney uses daylight saving (Oct-Apr)
+
+### "What if Evia Sign doesn't have the exact feature I need?"
+**Answer:**
+1. Check their API docs for alternatives
+2. Implement workaround using available features
+3. Document limitation in code comments
+4. Use fallback to mobile signature pad if critical
+
+### "How do I know if my implementation is correct?"
+**Answer:**
+1. Tests pass ✅
+2. Existing functionality still works ✅
+3. API endpoints match OpenAPI spec ✅
+4. Mobile interface is touch-friendly ✅
+5. Works offline (for worker features) ✅
+6. Code follows existing patterns ✅
+7. No TypeScript errors ✅
+
+---
+
+## 🚨 Common Pitfalls to Avoid
+
+1. **❌ Don't hardcode:** Use environment variables for all configuration
+2. **❌ Don't skip validation:** Always validate inputs with DTOs
+3. **❌ Don't ignore errors:** Implement proper error handling
+4. **❌ Don't forget offline:** Workers must function without internet
+5. **❌ Don't break mobile:** Test on actual mobile devices
+6. **❌ Don't skip tests:** Write tests as you build features
+7. **❌ Don't commit secrets:** Use .env and .gitignore
+8. **❌ Don't over-engineer:** Start simple, refactor later
+9. **❌ Don't ignore existing patterns:** Follow the codebase style
+10. **❌ Don't wait for perfection:** Ship working features, iterate
+
+---
+
 ## 📞 Support & Questions
+
+**Client is traveling and unavailable.**
 
 All documentation is in the repository. Key files:
 - **FEATURES.md** - What to build
@@ -739,49 +1115,104 @@ All documentation is in the repository. Key files:
 - **ENHANCEMENT-PLAN.md** - Implementation details
 - **README.md** - Getting started
 
-For questions about requirements, refer to the documentation files first.
+**Use the FAQ above for common questions. Make informed decisions and document them.**
 
 ---
 
 ## ✅ Final Checklist Before Starting
 
 - [ ] Read all documentation files (FEATURES.md, USER-GUIDE.md, ENHANCEMENT-PLAN.md)
-- [ ] Set up development environment
+- [ ] Set up development environment (follow README.md)
 - [ ] Run existing system to understand current state
+- [ ] Create `.env` file with placeholder values
 - [ ] Get Xero developer account and credentials
-- [ ] Get Evia Sign API access
-- [ ] Review Australian award rules for payroll
+- [ ] Get Evia Sign API access (or use mocks for now)
+- [ ] Review Australian award rules in `award.config.ts`
 - [ ] Understand mobile-first design requirements
-- [ ] Review offline-first architecture patterns
+- [ ] Review offline-first architecture in `packages/web/src/sync/`
 - [ ] Plan sprint breakdown for Phase 1
-- [ ] Set up CI/CD pipeline
+- [ ] Set up Git branch strategy
 
 ---
 
-## 🎯 Priority Order
+## 🎯 Priority Order (DO THESE IN ORDER)
 
-**Week 1-2:**
-1. Set up development environment
-2. Review existing codebase
-3. Get Xero and Evia Sign credentials
-4. Plan database migrations
+**Week 1-2: Setup & Planning**
+1. ✅ Set up development environment (docker-compose up)
+2. ✅ Read all documentation thoroughly
+3. ✅ Run existing app and test all features
+4. ✅ Create Xero developer account
+5. ✅ Get Evia Sign API access (or prepare mocks)
+6. ✅ Create feature branches
 
-**Week 3-4:**
-5. Implement Xero OAuth flow
-6. Implement basic payroll export
+**Week 3-4: Xero Integration**
+7. 🎯 Update Prisma schema for Xero models
+8. 🎯 Implement Xero OAuth connection flow
+9. 🎯 Build token refresh mechanism
+10. 🎯 Create payroll export endpoint
+11. 🎯 Write tests for Xero integration
+12. 🎯 Update OpenAPI documentation
 
-**Week 5-6:**
-7. Implement Evia Sign integration
-8. Create document templates
-9. Test mobile signature workflow
+**Week 5-6: Evia Sign Integration**
+13. 🎯 Update Prisma schema for Evia Sign models
+14. 🎯 Implement document sending workflow
+15. 🎯 Build webhook handlers for status updates
+16. 🎯 Create mobile-optimized templates
+17. 🎯 Integrate with job completion flow
+18. 🎯 Write tests for Evia Sign integration
 
-**Week 7-8:**
-10. Implement Job Template system
-11. Create pre-built templates
-12. Build template UI
+**Week 7-8: Job Templates**
+19. 🎯 Update Prisma schema for templates
+20. 🎯 Build template CRUD endpoints
+21. 🎯 Create template selection UI
+22. 🎯 Add pre-built template examples
+23. 🎯 Write tests for template system
+24. 🎯 Final integration testing
 
 ---
 
-**This handover plan provides complete guidance for implementing CleanOps. All technical specifications, business requirements, and implementation details are documented in the repository files.**
+## 🎬 Getting Started (First 30 Minutes)
 
-**Good luck with the implementation! 🚀**
+```bash
+# 1. Clone and setup
+cd cleanops
+cp .env.example .env  # If it exists, or create new .env
+pnpm install
+
+# 2. Start services
+docker-compose up -d
+
+# 3. Run migrations
+cd infra/prisma
+npx prisma migrate dev
+npx prisma generate
+pnpm prisma:seed  # Load demo data
+
+# 4. Start API
+cd ../../packages/api
+pnpm dev
+
+# 5. In new terminal, start web app
+cd packages/web
+pnpm dev
+
+# 6. Open browser
+# API: http://localhost:3000
+# Web: http://localhost:5173
+# API Docs: http://localhost:3000/docs
+
+# 7. Test existing features
+# - Create a job
+# - Assign workers
+# - Clock in/out
+# - Upload photos
+# - Complete sign-off
+
+# NOW YOU'RE READY TO START PHASE 1! 🚀
+```
+
+---
+
+**This handover plan provides complete autonomous guidance for implementing CleanOps. All technical specifications, business requirements, implementation patterns, and troubleshooting guidance are documented.**
+
+**You have full authority to make technical decisions. Build confidently! 🚀**
