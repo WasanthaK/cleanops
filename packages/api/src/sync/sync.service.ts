@@ -1,86 +1,51 @@
-export interface SyncEvent {
-  id: string;
-  createdAt: Date;
-  [key: string]: unknown;
-}
+/**
+ * Sync service stores offline events and serves incremental change feeds.
+ */
+import { Injectable } from '@nestjs/common';
 
-export interface SyncQuery {
-  since?: string;
-  limit?: number;
-}
+import { PrismaService } from '../prisma/prisma.service.js';
+import { SyncBatchDto } from './dto/sync.dto.js';
 
-export interface SyncEventPivot {
-  id: string;
-  createdAt: Date;
-}
-
-export interface SyncEventWhere {
-  OR?: Array<
-    | { createdAt: { gt: Date } }
-    | { createdAt: Date; id: { gt: string } }
-  >;
-}
-
-export type SyncEventOrderBy =
-  | { createdAt: "asc" | "desc" }
-  | { id: "asc" | "desc" };
-
-export interface SyncEventDelegate {
-  findMany(args: {
-    where?: SyncEventWhere;
-    orderBy?: SyncEventOrderBy[];
-    take?: number;
-  }): Promise<SyncEvent[]>;
-  findUnique(args: {
-    where: { id: string };
-    select: { id: boolean; createdAt: boolean };
-  }): Promise<SyncEventPivot | null>;
-}
-
-export interface PrismaLike {
-  syncEvent: SyncEventDelegate;
-}
-
-export const DEFAULT_LIMIT = 100;
-
+@Injectable()
 export class SyncService {
-  constructor(private readonly prisma: PrismaLike) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async listEvents(query: SyncQuery = {}): Promise<SyncEvent[]> {
-    const { since, limit = DEFAULT_LIMIT } = query;
+  async ingest(workerId: string, dto: SyncBatchDto) {
+    const events = await this.prisma.$transaction(
+      dto.events.map((event) =>
+        this.prisma.syncEvent.create({
+          data: {
+            workerId,
+            type: event.type,
+            occurredAt: new Date(event.occurredAt),
+            payload: event.payload
+          }
+        })
+      )
+    );
+    return { inserted: events.length }; 
+  }
 
-    let pivot: SyncEventPivot | null = null;
+  async since(workerId: string, cursor?: string) {
+    let createdAfter: Date | undefined;
 
-    if (since) {
-      pivot = await this.prisma.syncEvent.findUnique({
-        where: { id: since },
-        select: { id: true, createdAt: true },
-      });
-
-      if (!pivot) {
-        return [];
+    if (cursor) {
+      const parsed = new Date(cursor);
+      if (!Number.isNaN(parsed.getTime())) {
+        createdAfter = parsed;
       }
     }
 
-    const where = pivot
-      ? {
-          OR: [
-            { createdAt: { gt: pivot.createdAt } },
-            {
-              createdAt: pivot.createdAt,
-              id: { gt: pivot.id },
-            },
-          ],
-        }
-      : undefined;
-
     return this.prisma.syncEvent.findMany({
-      where,
+      where: {
+        workerId,
+        ...(createdAfter ? { createdAt: { gt: createdAfter } } : {})
+      },
       orderBy: [
-        { createdAt: "asc" },
-        { id: "asc" },
+        { createdAt: 'asc' },
+        { id: 'asc' }
       ],
-      take: limit,
+      take: 100
     });
   }
 }

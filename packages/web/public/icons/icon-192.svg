@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Minimal SVG icon for CleanOps PWA (192x192). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2b8a3e" />
+      <stop offset="100%" stop-color="#0b7285" />
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="32" ry="32" fill="url(#grad)" />
+  <g fill="#ffffff" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-weight="600" text-anchor="middle">
+    <text x="96" y="96" font-size="84">C</text>
+    <text x="96" y="156" font-size="48">Ops</text>
+  </g>
+</svg>

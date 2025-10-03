@@ -1,0 +1,8 @@
+node_modules
+pnpm-lock.yaml
+.DS_Store
+dist
+packages/api/dist
+packages/web/dist
+.env
+packages/api/.env
