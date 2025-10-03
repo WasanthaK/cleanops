@@ -20,7 +20,7 @@ export class AttendanceService {
         workerId,
         type,
         occurredAt: new Date(dto.occurredAt),
-        coordinates: dto.coordinates ? dto.coordinates.map((value) => new Prisma.Decimal(value)) : null,
+        coordinates: dto.coordinates ? dto.coordinates : undefined,
         note: dto.note ?? null
       }
     });

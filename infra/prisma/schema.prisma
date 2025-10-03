@@ -80,7 +80,7 @@ model Attendance {
   workerId   String
   type       AttendanceType
   occurredAt DateTime
-  coordinates Decimal[]?
+  coordinates Json?
   note       String?
   job        Job            @relation(fields: [jobId], references: [id])
   worker     Worker         @relation(fields: [workerId], references: [id])
