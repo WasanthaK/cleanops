@@ -30,7 +30,7 @@ export class PayrollService {
         totalHours,
         totalPay,
         timezone: dto.timezone,
-        breakdown: lines
+        breakdown: lines as any
       }
     });
 
