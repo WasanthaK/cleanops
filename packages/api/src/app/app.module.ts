@@ -20,6 +20,7 @@ import { XeroModule } from '../integrations/xero/xero.module.js';
 import { EviaSignModule } from '../integrations/evia-sign/evia-sign.module.js';
 import { TemplatesModule } from '../templates/templates.module.js';
 import { AnalyticsModule } from '../analytics/analytics.module.js';
+import { QualityModule } from '../quality/quality.module.js';
 import { JwtAppGuard } from '../common/guards/jwt-app.guard.js';
 import { IdempotencyLoggerMiddleware } from '../common/middleware/idempotency-logger.middleware.js';
 
@@ -42,7 +43,8 @@ import { IdempotencyLoggerMiddleware } from '../common/middleware/idempotency-lo
     XeroModule,
     EviaSignModule,
     TemplatesModule,
-    AnalyticsModule
+    AnalyticsModule,
+    QualityModule
   ],
   providers: [
     {

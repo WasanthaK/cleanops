@@ -58,6 +58,8 @@ model Worker {
   syncEvents          SyncEvent[]
   analyticsSnapshots  AnalyticsSnapshot[]
   workerLocations     WorkerLocation[]
+  qualityChecklists   QualityChecklist[]
+  supervisorReviews   QualityChecklist[]    @relation("SupervisorReviews")
 }
 
 model Site {
@@ -69,23 +71,24 @@ model Site {
 }
 
 model Job {
-  id              String              @id @default(cuid())
-  siteId          String
-  site            Site                @relation(fields: [siteId], references: [id])
-  title           String
-  description     String?
-  scheduledDate   DateTime
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  assignments     JobAssignment[]
-  attendances     Attendance[]
-  tasks           TaskItem[]
-  photos          ProofPhoto[]
-  signoff         Signoff?
-  incidents       Incident[]
-  payrollCalcs    PayrollCalc[]
-  eviaSignDocs    EviaSignDocument[]
-  workerLocations WorkerLocation[]
+  id                 String              @id @default(cuid())
+  siteId             String
+  site               Site                @relation(fields: [siteId], references: [id])
+  title              String
+  description        String?
+  scheduledDate      DateTime
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  assignments        JobAssignment[]
+  attendances        Attendance[]
+  tasks              TaskItem[]
+  photos             ProofPhoto[]
+  signoff            Signoff?
+  incidents          Incident[]
+  payrollCalcs       PayrollCalc[]
+  eviaSignDocs       EviaSignDocument[]
+  workerLocations    WorkerLocation[]
+  qualityChecklists  QualityChecklist[]
 }
 
 model JobAssignment {
@@ -300,4 +303,70 @@ model WorkerLocation {
   timestamp   DateTime
   
   @@index([workerId, timestamp])
+}
+
+// Quality Assurance System Models
+enum QualityStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  REVISION_REQUIRED
+}
+
+model QualityChecklist {
+  id           String             @id @default(cuid())
+  jobId        String
+  job          Job                @relation(fields: [jobId], references: [id])
+  workerId     String
+  worker       Worker             @relation(fields: [workerId], references: [id])
+  
+  items        QualityCheckItem[]
+  overallScore Float
+  
+  supervisorId String?
+  supervisor   Worker?            @relation("SupervisorReviews", fields: [supervisorId], references: [id])
+  
+  status       QualityStatus
+  reviewNotes  String?
+  completedAt  DateTime
+  reviewedAt   DateTime?
+  
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  
+  @@index([jobId])
+  @@index([workerId])
+  @@index([status])
+}
+
+model QualityCheckItem {
+  id          String           @id @default(cuid())
+  checklistId String
+  checklist   QualityChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  
+  category    String
+  description String
+  passed      Boolean
+  score       Int              // 1-5
+  notes       String?
+  photoKeys   String[]         // S3 keys for evidence photos
+  required    Boolean          @default(true)
+  
+  createdAt   DateTime         @default(now())
+  
+  @@index([checklistId])
+}
+
+model QualityTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  jobCategory String
+  items       Json[]   // Array of template items
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([jobCategory])
+  @@index([active])
 }
