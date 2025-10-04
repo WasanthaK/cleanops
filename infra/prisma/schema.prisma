@@ -62,6 +62,7 @@ model Worker {
   workerLocations     WorkerLocation[]
   qualityChecklists   QualityChecklist[]
   supervisorReviews   QualityChecklist[]    @relation("SupervisorReviews")
+  voiceNotes          VoiceNote[]
 }
 
 model Site {
@@ -97,6 +98,7 @@ model Job {
   workerLocations    WorkerLocation[]
   qualityChecklists  QualityChecklist[]
   clientFeedback     ClientFeedback[]
+  voiceNotes         VoiceNote[]
 }
 
 model JobAssignment {
@@ -451,4 +453,25 @@ model ServiceRequest {
   @@index([clientId])
   @@index([status])
   @@index([urgency])
+}
+
+// Voice Features Models
+model VoiceNote {
+  id          String   @id @default(cuid())
+  jobId       String?
+  job         Job?     @relation(fields: [jobId], references: [id])
+  taskId      String?
+  incidentId  String?
+  workerId    String
+  worker      Worker   @relation(fields: [workerId], references: [id])
+  
+  audioKey    String   // S3 key for audio file
+  transcript  String?  // Transcribed text
+  duration    Int      // Duration in seconds
+  language    String   @default("en-US")
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([workerId])
+  @@index([jobId])
 }

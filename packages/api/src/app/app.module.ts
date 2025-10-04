@@ -22,6 +22,7 @@ import { TemplatesModule } from '../templates/templates.module.js';
 import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { QualityModule } from '../quality/quality.module.js';
 import { ClientPortalModule } from '../client-portal/client-portal.module.js';
+import { VoiceModule } from '../voice/voice.module.js';
 import { JwtAppGuard } from '../common/guards/jwt-app.guard.js';
 import { IdempotencyLoggerMiddleware } from '../common/middleware/idempotency-logger.middleware.js';
 
@@ -46,7 +47,8 @@ import { IdempotencyLoggerMiddleware } from '../common/middleware/idempotency-lo
     TemplatesModule,
     AnalyticsModule,
     QualityModule,
-    ClientPortalModule
+    ClientPortalModule,
+    VoiceModule
   ],
   providers: [
     {

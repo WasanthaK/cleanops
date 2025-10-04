@@ -95,6 +95,50 @@ export class ApiRepo {
     const { data } = await this.client.get('/sync/since', { params: { cursor } });
     return data;
   }
+
+  // Voice endpoints
+  async requestAudioUpload(contentType: string) {
+    const { data } = await this.client.post('/voice/upload-request', { contentType });
+    return data as { uploadUrl: string; objectKey: string; publicUrl: string };
+  }
+
+  async createVoiceNote(body: unknown) {
+    const { data } = await this.client.post('/voice/notes', body);
+    return data;
+  }
+
+  async getVoiceNote(id: string) {
+    const { data } = await this.client.get(`/voice/notes/${id}`);
+    return data;
+  }
+
+  async getVoiceAudio(id: string) {
+    const { data } = await this.client.get(`/voice/notes/${id}/audio`);
+    return data;
+  }
+
+  async getVoiceTranscript(id: string) {
+    const { data } = await this.client.get(`/voice/notes/${id}/transcript`);
+    return data;
+  }
+
+  async updateVoiceTranscript(id: string, transcript: string) {
+    await this.client.put(`/voice/notes/${id}/transcript`, { transcript });
+  }
+
+  async processVoiceCommand(command: string, jobId?: string) {
+    const { data } = await this.client.post('/voice/command', { command, jobId });
+    return data;
+  }
+
+  async listJobVoiceNotes(jobId: string) {
+    const { data } = await this.client.get(`/voice/jobs/${jobId}/notes`);
+    return data;
+  }
+
+  async deleteVoiceNote(id: string) {
+    await this.client.delete(`/voice/notes/${id}`);
+  }
 }
 
 export const apiRepo = new ApiRepo();
