@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "PhotoKind" ADD VALUE 'QUALITY';
+ALTER TYPE "PhotoKind" ADD VALUE 'GENERAL';

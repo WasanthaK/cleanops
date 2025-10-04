@@ -12,6 +12,8 @@ enum PhotoKind {
   AFTER
   INCIDENT
   SIGNATURE
+  QUALITY
+  GENERAL
 }
 
 enum AttendanceType {
@@ -60,6 +62,7 @@ model Worker {
   workerLocations     WorkerLocation[]
   qualityChecklists   QualityChecklist[]
   supervisorReviews   QualityChecklist[]    @relation("SupervisorReviews")
+  voiceNotes          VoiceNote[]
 }
 
 model Site {
@@ -95,6 +98,7 @@ model Job {
   workerLocations    WorkerLocation[]
   qualityChecklists  QualityChecklist[]
   clientFeedback     ClientFeedback[]
+  voiceNotes         VoiceNote[]
 }
 
 model JobAssignment {
@@ -449,4 +453,85 @@ model ServiceRequest {
   @@index([clientId])
   @@index([status])
   @@index([urgency])
+}
+
+// Voice Features Models
+model VoiceNote {
+  id          String   @id @default(cuid())
+  jobId       String?
+  job         Job?     @relation(fields: [jobId], references: [id])
+  taskId      String?
+  incidentId  String?
+  workerId    String
+  worker      Worker   @relation(fields: [workerId], references: [id])
+  
+  audioKey    String   // S3 key for audio file
+  transcript  String?  // Transcribed text
+  duration    Int      // Duration in seconds
+  language    String   @default("en-US")
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([workerId])
+  @@index([jobId])
+}
+
+// Push Notifications Models
+enum NotificationType {
+  JOB_ASSIGNMENT
+  SIGNATURE_STATUS
+  SHIFT_REMINDER
+  EMERGENCY
+  QUALITY_REVIEW
+  SERVICE_REQUEST
+  GENERAL
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String           // Worker or Manager ID
+  type        NotificationType
+  title       String
+  message     String
+  data        Json?            // Additional context data
+  read        Boolean          @default(false)
+  actionUrl   String?
+  createdAt   DateTime         @default(now())
+  readAt      DateTime?
+  
+  @@index([userId, read])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model PushSubscription {
+  id          String   @id @default(cuid())
+  userId      String
+  endpoint    String   @unique
+  keys        Json     // p256dh and auth keys for Web Push
+  userAgent   String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  lastUsed    DateTime @default(now())
+  
+  @@index([userId])
+  @@index([active])
+}
+
+model NotificationPreference {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  jobAssignments   Boolean  @default(true)
+  signatureStatus  Boolean  @default(true)
+  shiftReminders   Boolean  @default(true)
+  emergencyAlerts  Boolean  @default(true)
+  qualityReviews   Boolean  @default(true)
+  serviceRequests  Boolean  @default(true)
+  emailEnabled     Boolean  @default(true)
+  pushEnabled      Boolean  @default(true)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([userId])
 }

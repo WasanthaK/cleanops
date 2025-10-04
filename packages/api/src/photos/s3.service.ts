@@ -3,7 +3,7 @@
  */
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 
@@ -41,5 +41,50 @@ export class S3Service {
       objectKey: key,
       publicUrl: `${this.publicEndpoint}/${this.bucket}/${key}`
     };
+  }
+
+  async createDownloadUrl(objectKey: string, expiresIn: number = 3600): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: objectKey
+    });
+    return getSignedUrl(this.client, command, { expiresIn });
+  }
+
+  async getObject(objectKey: string): Promise<Buffer> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: objectKey
+    });
+    const response = await this.client.send(command);
+    const stream = response.Body as any;
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
+  }
+
+  async putObject(objectKey: string, buffer: Buffer, contentType: string): Promise<void> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: objectKey,
+      Body: buffer,
+      ContentType: contentType
+    });
+    await this.client.send(command);
+  }
+
+  async objectExists(objectKey: string): Promise<boolean> {
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.bucket,
+        Key: objectKey
+      });
+      await this.client.send(command);
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }

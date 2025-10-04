@@ -51,6 +51,28 @@ export class ApiRepo {
     await this.client.post(`/jobs/${jobId}/photos`, body);
   }
 
+  async batchAttachPhotos(jobId: string, body: unknown) {
+    await this.client.post(`/jobs/${jobId}/photos/batch`, body);
+  }
+
+  async categorizePhoto(photoId: string, body: unknown) {
+    await this.client.put(`/photos/${photoId}/categorize`, body);
+  }
+
+  async getGroupedPhotos(jobId: string) {
+    const { data } = await this.client.get(`/jobs/${jobId}/photos/grouped`);
+    return data;
+  }
+
+  async getThumbnail(photoId: string, size: string) {
+    const { data } = await this.client.get(`/photos/${photoId}/thumbnail/${size}`);
+    return data;
+  }
+
+  async batchDeletePhotos(photoIds: string[]) {
+    await this.client.delete('/photos/batch', { data: { photoIds } });
+  }
+
   async signoff(jobId: string, body: unknown) {
     await this.client.post(`/jobs/${jobId}/signoff`, body);
   }
@@ -72,6 +94,97 @@ export class ApiRepo {
   async syncSince(cursor?: string): Promise<SyncEvent[]> {
     const { data } = await this.client.get('/sync/since', { params: { cursor } });
     return data;
+  }
+
+  // Voice endpoints
+  async requestAudioUpload(contentType: string) {
+    const { data } = await this.client.post('/voice/upload-request', { contentType });
+    return data as { uploadUrl: string; objectKey: string; publicUrl: string };
+  }
+
+  async createVoiceNote(body: unknown) {
+    const { data } = await this.client.post('/voice/notes', body);
+    return data;
+  }
+
+  async getVoiceNote(id: string) {
+    const { data } = await this.client.get(`/voice/notes/${id}`);
+    return data;
+  }
+
+  async getVoiceAudio(id: string) {
+    const { data } = await this.client.get(`/voice/notes/${id}/audio`);
+    return data;
+  }
+
+  async getVoiceTranscript(id: string) {
+    const { data } = await this.client.get(`/voice/notes/${id}/transcript`);
+    return data;
+  }
+
+  async updateVoiceTranscript(id: string, transcript: string) {
+    await this.client.put(`/voice/notes/${id}/transcript`, { transcript });
+  }
+
+  async processVoiceCommand(command: string, jobId?: string) {
+    const { data } = await this.client.post('/voice/command', { command, jobId });
+    return data;
+  }
+
+  async listJobVoiceNotes(jobId: string) {
+    const { data } = await this.client.get(`/voice/jobs/${jobId}/notes`);
+    return data;
+  }
+
+  async deleteVoiceNote(id: string) {
+    await this.client.delete(`/voice/notes/${id}`);
+  }
+
+  // Notification endpoints
+  async getNotifications(unreadOnly: boolean = false) {
+    const { data } = await this.client.get('/notifications', {
+      params: { unreadOnly: unreadOnly ? 'true' : 'false' }
+    });
+    return data;
+  }
+
+  async getUnreadCount() {
+    const { data } = await this.client.get('/notifications/count');
+    return data;
+  }
+
+  async markNotificationAsRead(id: string) {
+    await this.client.put(`/notifications/${id}/read`);
+  }
+
+  async markAllNotificationsAsRead() {
+    await this.client.put('/notifications/read-all');
+  }
+
+  async deleteNotification(id: string) {
+    await this.client.delete(`/notifications/${id}`);
+  }
+
+  async subscribePush(subscription: any) {
+    await this.client.post('/notifications/subscribe', subscription);
+  }
+
+  async unsubscribePush(endpoint: string) {
+    await this.client.delete('/notifications/unsubscribe', { data: { endpoint } });
+  }
+
+  async getPushSubscriptions() {
+    const { data } = await this.client.get('/notifications/subscriptions');
+    return data;
+  }
+
+  async getNotificationPreferences() {
+    const { data } = await this.client.get('/notifications/preferences');
+    return data;
+  }
+
+  async updateNotificationPreferences(preferences: any) {
+    await this.client.put('/notifications/preferences', preferences);
   }
 }
 
