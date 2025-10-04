@@ -16,6 +16,9 @@ import { SignoffModule } from '../signoff/signoff.module.js';
 import { IncidentsModule } from '../incidents/incidents.module.js';
 import { PayrollModule } from '../payroll/payroll.module.js';
 import { SyncModule } from '../sync/sync.module.js';
+import { XeroModule } from '../integrations/xero/xero.module.js';
+import { EviaSignModule } from '../integrations/evia-sign/evia-sign.module.js';
+import { TemplatesModule } from '../templates/templates.module.js';
 import { JwtAppGuard } from '../common/guards/jwt-app.guard.js';
 import { IdempotencyLoggerMiddleware } from '../common/middleware/idempotency-logger.middleware.js';
 
@@ -34,7 +37,10 @@ import { IdempotencyLoggerMiddleware } from '../common/middleware/idempotency-lo
     SignoffModule,
     IncidentsModule,
     PayrollModule,
-    SyncModule
+    SyncModule,
+    XeroModule,
+    EviaSignModule,
+    TemplatesModule
   ],
   providers: [
     {
