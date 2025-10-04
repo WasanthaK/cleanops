@@ -19,6 +19,9 @@ import { SyncModule } from '../sync/sync.module.js';
 import { XeroModule } from '../integrations/xero/xero.module.js';
 import { EviaSignModule } from '../integrations/evia-sign/evia-sign.module.js';
 import { TemplatesModule } from '../templates/templates.module.js';
+import { AnalyticsModule } from '../analytics/analytics.module.js';
+import { QualityModule } from '../quality/quality.module.js';
+import { ClientPortalModule } from '../client-portal/client-portal.module.js';
 import { JwtAppGuard } from '../common/guards/jwt-app.guard.js';
 import { IdempotencyLoggerMiddleware } from '../common/middleware/idempotency-logger.middleware.js';
 
@@ -40,7 +43,10 @@ import { IdempotencyLoggerMiddleware } from '../common/middleware/idempotency-lo
     SyncModule,
     XeroModule,
     EviaSignModule,
-    TemplatesModule
+    TemplatesModule,
+    AnalyticsModule,
+    QualityModule,
+    ClientPortalModule
   ],
   providers: [
     {

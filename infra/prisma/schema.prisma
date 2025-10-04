@@ -41,48 +41,60 @@ enum EviaSignStatus {
 }
 
 model Worker {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  passwordHash  String
-  name          String
-  role          String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  assignments   JobAssignment[]
-  attendances   Attendance[]
-  tasks         TaskItem[]
-  photos        ProofPhoto[]
-  signoffs      Signoff[]
-  incidents     Incident[]
-  payrollCalcs  PayrollCalc[]
-  syncEvents    SyncEvent[]
+  id                  String                @id @default(cuid())
+  email               String                @unique
+  passwordHash        String
+  name                String
+  role                String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  assignments         JobAssignment[]
+  attendances         Attendance[]
+  tasks               TaskItem[]
+  photos              ProofPhoto[]
+  signoffs            Signoff[]
+  incidents           Incident[]
+  payrollCalcs        PayrollCalc[]
+  syncEvents          SyncEvent[]
+  analyticsSnapshots  AnalyticsSnapshot[]
+  workerLocations     WorkerLocation[]
+  qualityChecklists   QualityChecklist[]
+  supervisorReviews   QualityChecklist[]    @relation("SupervisorReviews")
 }
 
 model Site {
-  id        String  @id @default(cuid())
-  name      String
-  address   String
-  timezone  String
-  jobs      Job[]
+  id              String           @id @default(cuid())
+  name            String
+  address         String
+  timezone        String
+  clientId        String?
+  client          Client?          @relation(fields: [clientId], references: [id])
+  jobs            Job[]
+  serviceRequests ServiceRequest[]
+  
+  @@index([clientId])
 }
 
 model Job {
-  id              String              @id @default(cuid())
-  siteId          String
-  site            Site                @relation(fields: [siteId], references: [id])
-  title           String
-  description     String?
-  scheduledDate   DateTime
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  assignments     JobAssignment[]
-  attendances     Attendance[]
-  tasks           TaskItem[]
-  photos          ProofPhoto[]
-  signoff         Signoff?
-  incidents       Incident[]
-  payrollCalcs    PayrollCalc[]
-  eviaSignDocs    EviaSignDocument[]
+  id                 String              @id @default(cuid())
+  siteId             String
+  site               Site                @relation(fields: [siteId], references: [id])
+  title              String
+  description        String?
+  scheduledDate      DateTime
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  assignments        JobAssignment[]
+  attendances        Attendance[]
+  tasks              TaskItem[]
+  photos             ProofPhoto[]
+  signoff            Signoff?
+  incidents          Incident[]
+  payrollCalcs       PayrollCalc[]
+  eviaSignDocs       EviaSignDocument[]
+  workerLocations    WorkerLocation[]
+  qualityChecklists  QualityChecklist[]
+  clientFeedback     ClientFeedback[]
 }
 
 model JobAssignment {
@@ -263,4 +275,178 @@ model TaskTemplate {
   orderIndex       Int         @default(0)
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+}
+
+// Analytics Models for Manager Dashboard
+model AnalyticsSnapshot {
+  id               String   @id @default(cuid())
+  date             DateTime @db.Date
+  workerId         String?
+  worker           Worker?  @relation(fields: [workerId], references: [id])
+  
+  jobsCompleted    Int
+  hoursWorked      Float
+  overtimeHours    Float
+  efficiencyScore  Float
+  qualityScore     Float?
+  revenueGenerated Float
+  laborCost        Float
+  
+  createdAt        DateTime @default(now())
+  
+  @@index([date, workerId])
+}
+
+model WorkerLocation {
+  id          String   @id @default(cuid())
+  workerId    String
+  worker      Worker   @relation(fields: [workerId], references: [id])
+  jobId       String?
+  job         Job?     @relation(fields: [jobId], references: [id])
+  latitude    Float
+  longitude   Float
+  accuracy    Float
+  timestamp   DateTime
+  
+  @@index([workerId, timestamp])
+}
+
+// Quality Assurance System Models
+enum QualityStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  REVISION_REQUIRED
+}
+
+model QualityChecklist {
+  id           String             @id @default(cuid())
+  jobId        String
+  job          Job                @relation(fields: [jobId], references: [id])
+  workerId     String
+  worker       Worker             @relation(fields: [workerId], references: [id])
+  
+  items        QualityCheckItem[]
+  overallScore Float
+  
+  supervisorId String?
+  supervisor   Worker?            @relation("SupervisorReviews", fields: [supervisorId], references: [id])
+  
+  status       QualityStatus
+  reviewNotes  String?
+  completedAt  DateTime
+  reviewedAt   DateTime?
+  
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  
+  @@index([jobId])
+  @@index([workerId])
+  @@index([status])
+}
+
+model QualityCheckItem {
+  id          String           @id @default(cuid())
+  checklistId String
+  checklist   QualityChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  
+  category    String
+  description String
+  passed      Boolean
+  score       Int              // 1-5
+  notes       String?
+  photoKeys   String[]         // S3 keys for evidence photos
+  required    Boolean          @default(true)
+  
+  createdAt   DateTime         @default(now())
+  
+  @@index([checklistId])
+}
+
+model QualityTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  jobCategory String
+  items       Json[]   // Array of template items
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([jobCategory])
+  @@index([active])
+}
+
+// Client Portal Models
+model Client {
+  id              String            @id @default(cuid())
+  companyName     String
+  contactName     String
+  email           String            @unique
+  phone           String
+  
+  portalEnabled   Boolean           @default(false)
+  portalPassword  String?           // Hashed password
+  lastLoginAt     DateTime?
+  
+  sites           Site[]
+  feedback        ClientFeedback[]
+  requests        ServiceRequest[]
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  @@index([email])
+  @@index([portalEnabled])
+}
+
+model ClientFeedback {
+  id             String   @id @default(cuid())
+  clientId       String
+  client         Client   @relation(fields: [clientId], references: [id])
+  jobId          String
+  job            Job      @relation(fields: [jobId], references: [id])
+  
+  rating         Int      // 1-5 stars
+  comments       String?
+  categories     Json     // Ratings for specific categories
+  wouldRecommend Boolean
+  
+  respondedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  
+  @@index([clientId])
+  @@index([jobId])
+  @@index([rating])
+}
+
+enum ServiceRequestStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model ServiceRequest {
+  id           String               @id @default(cuid())
+  clientId     String
+  client       Client               @relation(fields: [clientId], references: [id])
+  siteId       String?
+  site         Site?                @relation(fields: [siteId], references: [id])
+  
+  serviceType  String
+  description  String
+  urgency      String               // 'low', 'medium', 'high', 'urgent'
+  status       ServiceRequestStatus @default(PENDING)
+  
+  scheduledFor DateTime?
+  completedAt  DateTime?
+  
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  
+  @@index([clientId])
+  @@index([status])
+  @@index([urgency])
 }
