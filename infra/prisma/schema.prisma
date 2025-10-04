@@ -12,6 +12,8 @@ enum PhotoKind {
   AFTER
   INCIDENT
   SIGNATURE
+  QUALITY
+  GENERAL
 }
 
 enum AttendanceType {

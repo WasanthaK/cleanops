@@ -51,6 +51,28 @@ export class ApiRepo {
     await this.client.post(`/jobs/${jobId}/photos`, body);
   }
 
+  async batchAttachPhotos(jobId: string, body: unknown) {
+    await this.client.post(`/jobs/${jobId}/photos/batch`, body);
+  }
+
+  async categorizePhoto(photoId: string, body: unknown) {
+    await this.client.put(`/photos/${photoId}/categorize`, body);
+  }
+
+  async getGroupedPhotos(jobId: string) {
+    const { data } = await this.client.get(`/jobs/${jobId}/photos/grouped`);
+    return data;
+  }
+
+  async getThumbnail(photoId: string, size: string) {
+    const { data } = await this.client.get(`/photos/${photoId}/thumbnail/${size}`);
+    return data;
+  }
+
+  async batchDeletePhotos(photoIds: string[]) {
+    await this.client.delete('/photos/batch', { data: { photoIds } });
+  }
+
   async signoff(jobId: string, body: unknown) {
     await this.client.post(`/jobs/${jobId}/signoff`, body);
   }
