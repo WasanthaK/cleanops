@@ -22,6 +22,24 @@ enum AttendanceType {
   CLOCK_OUT
 }
 
+enum XeroSyncStatus {
+  CONNECTED
+  SYNCING
+  ERROR
+  DISCONNECTED
+}
+
+enum EviaSignStatus {
+  DRAFT
+  SENT
+  VIEWED
+  SIGNED
+  COMPLETED
+  EXPIRED
+  CANCELLED
+  DECLINED
+}
+
 model Worker {
   id            String         @id @default(cuid())
   email         String         @unique
@@ -49,21 +67,22 @@ model Site {
 }
 
 model Job {
-  id            String         @id @default(cuid())
-  siteId        String
-  site          Site           @relation(fields: [siteId], references: [id])
-  title         String
-  description   String?
-  scheduledDate DateTime
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  assignments   JobAssignment[]
-  attendances   Attendance[]
-  tasks         TaskItem[]
-  photos        ProofPhoto[]
-  signoff       Signoff?
-  incidents     Incident[]
-  payrollCalcs  PayrollCalc[]
+  id              String              @id @default(cuid())
+  siteId          String
+  site            Site                @relation(fields: [siteId], references: [id])
+  title           String
+  description     String?
+  scheduledDate   DateTime
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  assignments     JobAssignment[]
+  attendances     Attendance[]
+  tasks           TaskItem[]
+  photos          ProofPhoto[]
+  signoff         Signoff?
+  incidents       Incident[]
+  payrollCalcs    PayrollCalc[]
+  eviaSignDocs    EviaSignDocument[]
 }
 
 model JobAssignment {
@@ -156,4 +175,92 @@ model SyncEvent {
   payload    String
   createdAt  DateTime @default(now())
   worker     Worker   @relation(fields: [workerId], references: [id])
+}
+
+// Xero Integration Models
+model XeroIntegration {
+  id             String         @id @default(cuid())
+  tenantId       String         @unique // Xero organisation ID
+  accessToken    String         // Encrypted
+  refreshToken   String         // Encrypted
+  expiresAt      DateTime
+  lastSyncAt     DateTime?
+  syncStatus     XeroSyncStatus
+  payrollMapping Json           // Map pay types to Xero items
+  expenseMapping Json?
+  taxMapping     Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  syncLogs       XeroSyncLog[]
+}
+
+model XeroSyncLog {
+  id            String          @id @default(cuid())
+  integrationId String
+  integration   XeroIntegration @relation(fields: [integrationId], references: [id])
+  syncType      String          // 'payroll', 'invoice', 'expense'
+  status        String          // 'success', 'failed', 'partial'
+  recordsSynced Int             @default(0)
+  errorMessage  String?
+  metadata      Json?
+  createdAt     DateTime        @default(now())
+}
+
+// Evia Sign Integration Models
+model EviaSignDocument {
+  id               String         @id @default(cuid())
+  jobId            String?
+  job              Job?           @relation(fields: [jobId], references: [id])
+  eviaDocId        String         @unique // Evia Sign document ID
+  status           EviaSignStatus
+  documentType     String         // 'completion_report', 'invoice', 'contract'
+  recipientEmail   String
+  recipientName    String
+  pdfUrl           String?
+  signedPdfUrl     String?
+  sentAt           DateTime?
+  viewedAt         DateTime?
+  signedAt         DateTime?
+  webhookEvents    Json?
+  fallbackUsed     Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model EviaSignTemplate {
+  id             String   @id @default(cuid())
+  name           String
+  eviaTemplateId String?  // Evia Sign template ID (if using Evia templates)
+  documentType   String   // 'completion_report', 'invoice', 'contract'
+  templateData   Json     // Template configuration
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// Job Template Models
+model JobTemplate {
+  id              String         @id @default(cuid())
+  name            String
+  category        String         // 'commercial', 'residential', 'specialized'
+  description     String?
+  estimatedHours  Float?
+  basePrice       Float?
+  active          Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  taskTemplates   TaskTemplate[]
+}
+
+model TaskTemplate {
+  id               String      @id @default(cuid())
+  jobTemplateId    String
+  jobTemplate      JobTemplate @relation(fields: [jobTemplateId], references: [id])
+  title            String
+  description      String?
+  estimatedMinutes Int?
+  required         Boolean     @default(false)
+  orderIndex       Int         @default(0)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }

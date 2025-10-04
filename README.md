@@ -2,6 +2,25 @@
 
 CleanOps is an offline-capable work completion platform tailored for cleaning and field service companies operating in Australia. The monorepo contains a NestJS API, a React + Vite progressive web app (PWA), infrastructure definitions, and shared tooling that enable workers to capture attendance, tasks, photos, and client sign-off even when completely offline.
 
+## 🚀 Phase 1 Integrations - NOW LIVE!
+
+Three major integrations have been implemented:
+
+1. **Xero Accounting Integration** - Automated payroll export and accounting sync
+2. **Evia Sign Integration** - Professional digital signatures for job completion
+3. **Job Template System** - Reusable templates for common cleaning tasks
+
+**📚 Quick Links:**
+- [Deployment Checklist](DEPLOYMENT_CHECKLIST.md) - Step-by-step setup guide
+- [Integration Guide](INTEGRATION_GUIDE.md) - Technical documentation
+- [API Examples](API_EXAMPLES.md) - Usage examples for all endpoints
+- [Phase 1 Summary](PHASE1_SUMMARY.md) - Implementation overview
+
+**🎯 Quick Start:**
+```bash
+./scripts/setup-phase1.sh  # Automated setup
+```
+
 ## Repository Structure
 
 ```
