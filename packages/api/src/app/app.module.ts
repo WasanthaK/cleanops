@@ -21,6 +21,7 @@ import { EviaSignModule } from '../integrations/evia-sign/evia-sign.module.js';
 import { TemplatesModule } from '../templates/templates.module.js';
 import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { QualityModule } from '../quality/quality.module.js';
+import { ClientPortalModule } from '../client-portal/client-portal.module.js';
 import { JwtAppGuard } from '../common/guards/jwt-app.guard.js';
 import { IdempotencyLoggerMiddleware } from '../common/middleware/idempotency-logger.middleware.js';
 
@@ -44,7 +45,8 @@ import { IdempotencyLoggerMiddleware } from '../common/middleware/idempotency-lo
     EviaSignModule,
     TemplatesModule,
     AnalyticsModule,
-    QualityModule
+    QualityModule,
+    ClientPortalModule
   ],
   providers: [
     {

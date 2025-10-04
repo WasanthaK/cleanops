@@ -63,11 +63,16 @@ model Worker {
 }
 
 model Site {
-  id        String  @id @default(cuid())
-  name      String
-  address   String
-  timezone  String
-  jobs      Job[]
+  id              String           @id @default(cuid())
+  name            String
+  address         String
+  timezone        String
+  clientId        String?
+  client          Client?          @relation(fields: [clientId], references: [id])
+  jobs            Job[]
+  serviceRequests ServiceRequest[]
+  
+  @@index([clientId])
 }
 
 model Job {
@@ -89,6 +94,7 @@ model Job {
   eviaSignDocs       EviaSignDocument[]
   workerLocations    WorkerLocation[]
   qualityChecklists  QualityChecklist[]
+  clientFeedback     ClientFeedback[]
 }
 
 model JobAssignment {
@@ -369,4 +375,78 @@ model QualityTemplate {
   
   @@index([jobCategory])
   @@index([active])
+}
+
+// Client Portal Models
+model Client {
+  id              String            @id @default(cuid())
+  companyName     String
+  contactName     String
+  email           String            @unique
+  phone           String
+  
+  portalEnabled   Boolean           @default(false)
+  portalPassword  String?           // Hashed password
+  lastLoginAt     DateTime?
+  
+  sites           Site[]
+  feedback        ClientFeedback[]
+  requests        ServiceRequest[]
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  @@index([email])
+  @@index([portalEnabled])
+}
+
+model ClientFeedback {
+  id             String   @id @default(cuid())
+  clientId       String
+  client         Client   @relation(fields: [clientId], references: [id])
+  jobId          String
+  job            Job      @relation(fields: [jobId], references: [id])
+  
+  rating         Int      // 1-5 stars
+  comments       String?
+  categories     Json     // Ratings for specific categories
+  wouldRecommend Boolean
+  
+  respondedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  
+  @@index([clientId])
+  @@index([jobId])
+  @@index([rating])
+}
+
+enum ServiceRequestStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model ServiceRequest {
+  id           String               @id @default(cuid())
+  clientId     String
+  client       Client               @relation(fields: [clientId], references: [id])
+  siteId       String?
+  site         Site?                @relation(fields: [siteId], references: [id])
+  
+  serviceType  String
+  description  String
+  urgency      String               // 'low', 'medium', 'high', 'urgent'
+  status       ServiceRequestStatus @default(PENDING)
+  
+  scheduledFor DateTime?
+  completedAt  DateTime?
+  
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  
+  @@index([clientId])
+  @@index([status])
+  @@index([urgency])
 }
