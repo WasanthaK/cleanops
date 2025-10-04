@@ -41,21 +41,23 @@ enum EviaSignStatus {
 }
 
 model Worker {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  passwordHash  String
-  name          String
-  role          String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  assignments   JobAssignment[]
-  attendances   Attendance[]
-  tasks         TaskItem[]
-  photos        ProofPhoto[]
-  signoffs      Signoff[]
-  incidents     Incident[]
-  payrollCalcs  PayrollCalc[]
-  syncEvents    SyncEvent[]
+  id                  String                @id @default(cuid())
+  email               String                @unique
+  passwordHash        String
+  name                String
+  role                String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  assignments         JobAssignment[]
+  attendances         Attendance[]
+  tasks               TaskItem[]
+  photos              ProofPhoto[]
+  signoffs            Signoff[]
+  incidents           Incident[]
+  payrollCalcs        PayrollCalc[]
+  syncEvents          SyncEvent[]
+  analyticsSnapshots  AnalyticsSnapshot[]
+  workerLocations     WorkerLocation[]
 }
 
 model Site {
@@ -83,6 +85,7 @@ model Job {
   incidents       Incident[]
   payrollCalcs    PayrollCalc[]
   eviaSignDocs    EviaSignDocument[]
+  workerLocations WorkerLocation[]
 }
 
 model JobAssignment {
@@ -263,4 +266,38 @@ model TaskTemplate {
   orderIndex       Int         @default(0)
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+}
+
+// Analytics Models for Manager Dashboard
+model AnalyticsSnapshot {
+  id               String   @id @default(cuid())
+  date             DateTime @db.Date
+  workerId         String?
+  worker           Worker?  @relation(fields: [workerId], references: [id])
+  
+  jobsCompleted    Int
+  hoursWorked      Float
+  overtimeHours    Float
+  efficiencyScore  Float
+  qualityScore     Float?
+  revenueGenerated Float
+  laborCost        Float
+  
+  createdAt        DateTime @default(now())
+  
+  @@index([date, workerId])
+}
+
+model WorkerLocation {
+  id          String   @id @default(cuid())
+  workerId    String
+  worker      Worker   @relation(fields: [workerId], references: [id])
+  jobId       String?
+  job         Job?     @relation(fields: [jobId], references: [id])
+  latitude    Float
+  longitude   Float
+  accuracy    Float
+  timestamp   DateTime
+  
+  @@index([workerId, timestamp])
 }
