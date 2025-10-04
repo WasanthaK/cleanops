@@ -1270,11 +1270,39 @@ All documentation is in the repository. Key files:
 49. ✅ Implement service request workflow (create, list, update, status tracking)
 50. 🎯 Write comprehensive tests (pending)
 
-**Week 21-28: Mobile App Enhancements** ⏳ PENDING
-51. 🎯 Enhanced Photo Management (AI categorization, compression, batch upload, annotation)
-52. 🎯 Voice Features (voice-to-text, audio reports, voice commands)
-53. 🎯 Offline Optimization (conflict resolution, sync prioritization)
-54. 🎯 Push Notifications (job alerts, shift reminders, emergency notifications)
+**Week 21-22: Enhanced Photo Management** ⏳ PENDING
+51. 🎯 Add photo categorization service (AI/ML-based)
+52. 🎯 Implement client-side image compression (browser-image-compression)
+53. 🎯 Build batch photo upload UI with progress tracking
+54. 🎯 Add photo annotation tools (canvas-based)
+55. 🎯 Generate thumbnails server-side
+56. 🎯 Extract and store EXIF data
+57. 🎯 Write tests for photo features
+
+**Week 23-24: Voice Features** ⏳ PENDING
+58. 🎯 Integrate Web Speech API / @capacitor-community/speech-recognition
+59. 🎯 Build voice recording UI
+60. 🎯 Implement audio file upload to S3
+61. 🎯 Add voice-to-text transcription
+62. 🎯 Create voice command system
+63. 🎯 Write tests for voice features
+
+**Week 25-26: Offline Optimization** ⏳ PENDING
+64. 🎯 Enhance conflict resolution logic (last-write-wins with notifications)
+65. 🎯 Add detailed sync progress UI
+66. 🎯 Increase IndexedDB quota management
+67. 🎯 Implement priority queue for sync
+68. 🎯 Optimize background sync with exponential backoff
+69. 🎯 Write tests for offline features
+
+**Week 27-28: Push Notifications** ⏳ PENDING
+70. 🎯 Set up push notification service (Firebase Cloud Messaging)
+71. 🎯 Implement service worker for push
+72. 🎯 Build notification API endpoints
+73. 🎯 Add in-app notification center
+74. 🎯 Implement notification preferences
+75. 🎯 Add notification history
+76. 🎯 Write tests for notifications
 
 ---
 
