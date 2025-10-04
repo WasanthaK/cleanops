@@ -139,6 +139,53 @@ export class ApiRepo {
   async deleteVoiceNote(id: string) {
     await this.client.delete(`/voice/notes/${id}`);
   }
+
+  // Notification endpoints
+  async getNotifications(unreadOnly: boolean = false) {
+    const { data } = await this.client.get('/notifications', {
+      params: { unreadOnly: unreadOnly ? 'true' : 'false' }
+    });
+    return data;
+  }
+
+  async getUnreadCount() {
+    const { data } = await this.client.get('/notifications/count');
+    return data;
+  }
+
+  async markNotificationAsRead(id: string) {
+    await this.client.put(`/notifications/${id}/read`);
+  }
+
+  async markAllNotificationsAsRead() {
+    await this.client.put('/notifications/read-all');
+  }
+
+  async deleteNotification(id: string) {
+    await this.client.delete(`/notifications/${id}`);
+  }
+
+  async subscribePush(subscription: any) {
+    await this.client.post('/notifications/subscribe', subscription);
+  }
+
+  async unsubscribePush(endpoint: string) {
+    await this.client.delete('/notifications/unsubscribe', { data: { endpoint } });
+  }
+
+  async getPushSubscriptions() {
+    const { data } = await this.client.get('/notifications/subscriptions');
+    return data;
+  }
+
+  async getNotificationPreferences() {
+    const { data } = await this.client.get('/notifications/preferences');
+    return data;
+  }
+
+  async updateNotificationPreferences(preferences: any) {
+    await this.client.put('/notifications/preferences', preferences);
+  }
 }
 
 export const apiRepo = new ApiRepo();
